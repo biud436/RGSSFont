@@ -152,10 +152,13 @@ BOOL RGSSFont_InitWithModules()
 	GETPROC(RGSSEval);
 	GETPROC(RGSSGetInt);
 	GETPROC(RGSSGetBool);
+#ifdef USE_UTF16
 	GETPROC(RGSSSetStringUTF16);
 	GETPROC(RGSSGetStringUTF16);
+#else
 	GETPROC(RGSSSetStringUTF8);
 	GETPROC(RGSSGetStringUTF8);
+#endif
 
 #undef GETPROC
 
@@ -195,7 +198,7 @@ int RGSSFont_Initialize(DWORD threadId)
 			nValidId = _modules->_pRGSSGetInt("Game_BattlerBase::FEATURE_ELEMENT_RATE");
 		}
 		else {
-			nValidId = _modules->_pRGSSGetInt("Input::DOWN");
+			nValidId = _modules->_pRGSSGetInt("Game_Player::CENTER_X");
 		}
 
 		// Game_BattlerBase::FEATURE_ELEMENT_RATE가 0이면 아직 스크립트 로드가 덜된 것으로 추측한다.
@@ -256,8 +259,13 @@ void RGSSFont_UpdateConfig()
 		isValid = _modules->_pRGSSGetBool(sValid.c_str());
 		if (isValid == TRUE)
 		{
+#ifdef USE_UTF16
 			_modules->_pRGSSSetStringUTF16("$temp_font_name", L"RS::LIST[\"폰트명\"] = Font.default_name");
 			_modules->_pRGSSSetStringUTF16("$temp_font_size", L"RS::LIST[\"폰트크기\"] = Font.default_size");
+#else
+			_modules->_pRGSSSetStringUTF8(ToUTF8(L"$temp_font_name").c_str(), ToUTF8(L"RS::LIST[\"폰트명\"] = Font.default_name").c_str());
+			_modules->_pRGSSSetStringUTF8(ToUTF8(L"$temp_font_size").c_str(), ToUTF8(L"RS::LIST[\"폰트크기\"] = Font.default_size").c_str());
+#endif
 			_modules->_pRGSSEval("$temp_font_name");
 			_modules->_pRGSSEval("$temp_font_size");
 			_modules->_pRGSSEval("$temp_font_name = nil");
