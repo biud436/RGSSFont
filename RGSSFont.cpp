@@ -172,7 +172,7 @@ int RGSSFont_Initialize(DWORD threadId)
 	{
 		RGSSFont_ReadIni();
 
-		Sleep(300);
+		Sleep(200);
 
 		if (!RGSSFont_InitWithModules()) {
 			printf_s("initWithModules failed\n");
