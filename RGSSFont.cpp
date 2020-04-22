@@ -276,6 +276,15 @@ int RGSSFont_Initialize(DWORD threadId)
 
 		printf_s("Font.default_name has been changed!\n");
 
+		DWORD newBase;
+		__asm {
+			MOV EAX, DWORD PTR FS:[0x30]
+			MOV EAX, DWORD PTR DS:[EAX+0x08]
+			MOV newBase, EAX
+		}
+
+		printf_s("Target Address : 0x%x\n", newBase);
+
 		if (sRubyVersion == "1.8.1") {
 			_modules->_pRGSSEval("c = Proc.new { cw = $scene.instance_variable_get(\"@command_window\"); cw.contents.font.name = Font.default_name; cw.refresh; cw = nil }; c.call if $scene && $scene.is_a?(Scene_Title)");
 		}
