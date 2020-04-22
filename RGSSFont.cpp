@@ -243,6 +243,13 @@ int RGSSFont_Initialize(DWORD threadId)
 
 		if (sRubyVersion == "1.9.2") {
 			nValidId = _modules->_pRGSSGetInt("Game_BattlerBase::FEATURE_ELEMENT_RATE");
+			if (_modules->_pRGSSGetBool("defined?(Font) == 'constant'") == TRUE)
+			{
+				_modules->_pRGSSEval("Font.default_name = [$font_name]");
+				_modules->_pRGSSEval("Font.default_size = $font_size.to_i");
+
+				printf_s("Font has been changed!\n");
+			}
 		}
 		else {
 			nValidId = _modules->_pRGSSGetInt("Game_Player::CENTER_X");
