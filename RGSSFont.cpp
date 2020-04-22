@@ -10,6 +10,10 @@
 #include <process.h>
 #include <TlHelp32.h>
 #include <iostream>
+#include <Psapi.h>
+
+#include <locale>
+#include <codecvt>
 
 VOID CALLBACK APCProc(ULONG_PTR);
 
@@ -67,6 +71,13 @@ std::string ToUTF8(const std::wstring& law)
 
 	return utf8;
 }
+std::wstring ToStlUTF8(const char* input)
+{
+	std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+	std::wstring output = converter.from_bytes(input);
+
+	return output;
+}
 #pragma endregion
 
 namespace RGSS 
@@ -97,10 +108,14 @@ WCHAR _szGameTitle[MAX_PATH];
 bool _bReady = false;
 bool _bInitModules = false;
 bool _bDirtyFont = false;
+DWORD _dwCurrentProcessId = 0;
+DWORD _dwMainThreadId = 0;
 
-void RGSSFont_Create()
+void RGSSFont_Create(DWORD dwCurrentProcessId)
 {
 	_modules = new RGSSFunctions();
+
+	_dwCurrentProcessId = dwCurrentProcessId;
 
 	AllocConsole();
 	freopen("CONOUT$", "wt", stdout);
@@ -162,7 +177,39 @@ BOOL RGSSFont_InitWithModules()
 
 #undef GETPROC
 
+	MODULEINFO moduleInfo;
+	GetModuleInformation(GetCurrentProcess(), _hRGSSSystemDLL, &moduleInfo, sizeof(moduleInfo));
+	
+	// 가상 공간의 시작 주소
+	char* begin = static_cast<char*>(moduleInfo.lpBaseOfDll);
+	//RGSS1DrawTextProto pRGSS1DrawText = (RGSS1DrawTextProto)((PBYTE)begin + 0x0092A0);
+
 	return true;
+}
+
+DWORD RGSSGetMainThreadID(DWORD processID)
+{
+	THREADENTRY32 entry;
+	ZeroMemory(&entry, sizeof(THREADENTRY32));
+	entry.dwSize = sizeof(THREADENTRY32);
+
+	HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+
+	if (Thread32First(snapshot, &entry))
+	{
+		while (Thread32Next(snapshot, &entry))
+		{
+			if (entry.th32OwnerProcessID == processID)
+			{
+				CloseHandle(snapshot);
+				return entry.th32ThreadID;
+			}
+		}
+	}
+
+	CloseHandle(snapshot);
+
+	return NULL;
 }
 
 int RGSSFont_Initialize(DWORD threadId)
@@ -221,6 +268,10 @@ int RGSSFont_Initialize(DWORD threadId)
 		_modules->_pRGSSEval("$font_name = nil");
 
 		printf_s("Font.default_name has been changed!\n");
+
+		if (sRubyVersion == "1.8.1") {
+			_modules->_pRGSSEval("c = Proc.new { cw = $scene.instance_variable_get(\"@command_window\"); cw.contents.font.name = Font.default_name; cw.refresh; cw = nil }; c.call if $scene && $scene.is_a?(Scene_Title)");
+		}
 
 		// Set the font when using YEA-MessageSystem
 		RGSSFont_UpdateConfig();

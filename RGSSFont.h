@@ -31,9 +31,10 @@ struct RGSSFunctions
 	}
 };
 
-void RGSSFont_Create();
+void RGSSFont_Create(DWORD dwCurrentProcessId);
 void RGSSFont_Dispose();
 void RGSSFont_PrePare();
+DWORD RGSSGetMainThreadID(DWORD processID);
 int RGSSFont_Initialize(DWORD threadId);
 BOOL RGSSFont_InitWithModules();
 void RGSSFont_ReadIni();
